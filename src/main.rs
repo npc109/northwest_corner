@@ -1,4 +1,5 @@
 use crate::io::ErrorKind::InvalidData;
+use ansi_term::Colour;
 use std::collections::HashMap;
 use std::io;
 use std::io::Error;
@@ -47,7 +48,13 @@ fn main() -> io::Result<()> {
     draw_matrix(&mut consumers, &mut providers, &mut matrix);
     calculate(&mut consumers, &mut providers, &mut matrix);
     draw_matrix(&mut consumers, &mut providers, &mut matrix);
-    println!("Затраты {}", matrix.iter().map(|e: &P2C| -> u32{ e.state * e.cost }).sum::<u32>());
+    println!(
+        "Затраты {}",
+        matrix
+            .iter()
+            .map(|e: &P2C| -> u32 { e.state * e.cost })
+            .sum::<u32>()
+    );
     Ok(())
 }
 
@@ -59,14 +66,23 @@ fn draw_matrix(
     println!("_____________________________________");
     println!("|Поставщик  |       Потребитель     |");
     println!("_____________________________________");
-    for (storage_id, storage) in providers.iter() {
+    let mut storage_ids = providers.keys().copied().collect::<Vec<_>>();
+    storage_ids.sort();
+    for storage_id in storage_ids.iter() {
         print!("|Потсащик №{}|", storage_id);
         for rec in matrix.iter() {
             if rec.resource_id == *storage_id {
-                print!("|cт:{} дст:{} |", rec.cost, rec.state);
+                if rec.state > 0 {
+                    print!(
+                        "{}",
+                        Colour::Green.paint(format!("|cт:{} дст:{} |", rec.cost, rec.state))
+                    );
+                } else {
+                    print!("|cт:{} дст:{} |", rec.cost, rec.state);
+                }
             }
         }
-        print!("|Запас {}| \n", storage.resources);
+        print!("|Запас {}| \n", providers[storage_id].resources);
     }
     print!("|Потребность:    |");
     for (consumer_id, consumer) in consumers.iter() {
@@ -115,9 +131,9 @@ fn calculate(
                 .expect("key error")
                 .req
                 - providers
-                .get_mut(&record.resource_id)
-                .expect("key error")
-                .resources;
+                    .get_mut(&record.resource_id)
+                    .expect("key error")
+                    .resources;
             record.state = providers
                 .get_mut(&record.resource_id)
                 .expect("key error")
@@ -148,7 +164,10 @@ fn get_matrix(consumers: &HashMap<u32, Consumer>, providers: &HashMap<u32, Provi
                 consumer_id: *id_consumer,
                 state: 0,
                 cost: {
-                    println!("ведите затраты поставщика № на доставку к потребителю  № ", );
+                    println!(
+                        "ведите затраты поставщика № {} на доставку к потребителю  № {}",
+                        id_provider, id_consumer
+                    );
                     get_params_from_keyboard()
                 },
             })
@@ -167,9 +186,9 @@ fn chek_balance(
         .map(|(id, x)| -> &u32 { &x.req })
         .sum::<u32>()
         != providers
-        .iter()
-        .map(|(id, x)| -> &u32 { &x.resources })
-        .sum::<u32>()
+            .iter()
+            .map(|(id, x)| -> &u32 { &x.resources })
+            .sum::<u32>()
     {
         return Err(Error::new(InvalidData, "Задача не сбалансирована"));
     }
