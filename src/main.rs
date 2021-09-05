@@ -85,7 +85,7 @@ fn draw_matrix(
         print!("|Запас {}| \n", providers[storage_id].resources);
     }
     print!("|Потребность:    |");
-    for (consumer_id, consumer) in consumers.iter() {
+    for (_consumer_id, consumer) in consumers.iter() {
         print!("    {}    |", consumer.req);
     }
     print!("\n")
@@ -157,8 +157,8 @@ fn calculate(
 
 fn get_matrix(consumers: &HashMap<u32, Consumer>, providers: &HashMap<u32, Provider>) -> Vec<P2C> {
     let mut matrix = Vec::new();
-    for (id_provider, provider) in providers.iter() {
-        for (id_consumer, consumer) in consumers.iter() {
+    for (id_provider, _provider) in providers.iter() {
+        for (id_consumer, _consumer) in consumers.iter() {
             matrix.push(P2C {
                 resource_id: *id_provider,
                 consumer_id: *id_consumer,
@@ -183,11 +183,11 @@ fn chek_balance(
 ) -> io::Result<()> {
     if consumers
         .iter()
-        .map(|(id, x)| -> &u32 { &x.req })
+        .map(|(_id, x)| -> &u32 { &x.req })
         .sum::<u32>()
         != providers
             .iter()
-            .map(|(id, x)| -> &u32 { &x.resources })
+            .map(|(_id, x)| -> &u32 { &x.resources })
             .sum::<u32>()
     {
         return Err(Error::new(InvalidData, "Задача не сбалансирована"));
